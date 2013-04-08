@@ -1,0 +1,4 @@
+mini2440上的led灯驱动
+
+目前能完成的功能：open close ioctl
+ioctl(cmd,arg) cmd:0亮,1灭。arg:第n(0~3)灯 
