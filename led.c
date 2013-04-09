@@ -1,5 +1,5 @@
 /*
- *led.c mini2437led驱动
+ *led.c mini2440led驱动
  */
 #include<linux/module.h>
 #include<linux/init.h>
@@ -7,14 +7,11 @@
 #include<linux/types.h>
 #include<linux/cdev.h>
 #include<linux/fs.h>
+#include<linux/uaccess.h>
 #include<linux/ioctl.h>
 #include<linux/device.h>
 
-#include <mach/regs-gpio.h>
-#include <mach/hardware.h>
-#include <linux/gpio.h>
-
-#include <asm/io.h>
+#include <asm/io.h>//io映射头文件
 
 #include "led.h"
 /*存放寄存器绝对地址*/
@@ -28,12 +25,16 @@ unsigned volatile char	*rGPBUP;
 
 dev_t led_num;//存放设备号
 struct cdev *my_led;//创建cdev结构  字符设备结构体
-int major=0,minor=0;
+int major=0,minor=0;//主设备号，次设备号
+int ret,data=0;
 static struct class *led_class;
 //static struct class_device *led_class_dev;
+
 /*函数声明*/
 void led_init(void);
-
+//初始化led
+int led_status(int num);
+//获取当前led的状态.参数num为led灯的序号0~3.返回0：亮、1：灭
 
 /***************打开实现函数*********************************/
 static int led_open(struct inode *inode,struct file *file)
@@ -41,6 +42,31 @@ static int led_open(struct inode *inode,struct file *file)
 //	led_init();//初始化led，包括内存映射，io初始化
 	printk("led device open\n");
 	return 0;
+}
+
+/***************写入实现函数*********************************/
+static ssize_t led_write(struct file *filp, const char __user *userbuf,
+		size_t count, loff_t *off)
+{
+	if((ret = copy_from_user((void *)&data,userbuf,sizeof(int))) > 0){
+		printk("%d byte fail to write\n",ret);
+	}else{
+	printk("Write Data %d\n",data);
+	}
+	return sizeof(int);
+}
+
+/***************读取实现函数*********************************/
+static ssize_t led_read(struct file *filp, char __user *userbuf,
+		size_t count, loff_t *off)
+{
+	int num = led_status(0);
+	if((ret = copy_to_user((void *)userbuf,&num,sizeof(int))) > 0){
+		printk("%d byte fail to read\n",ret);
+	}else{
+	printk("Read Data %d\n",num);
+	}
+	return sizeof(int);
 }
 
 /***************关闭实现函数*********************************/
@@ -75,6 +101,8 @@ static struct file_operations myled_fops =
 {
 	.owner = THIS_MODULE, 
 	.open  = led_open,
+	.read  = led_read,
+	.write = led_write,
 	.ioctl = led_ioctl,
 	.release = led_release,
 };
@@ -112,8 +140,9 @@ static int __init dev_init(void)
 static void __exit dev_exit(void)
 {
 	printk("Unloading cdev \n");
-	unregister_chrdev_region(led_num,1);//删除中断号
+	unregister_chrdev_region(led_num,1);//删除设备号
 	cdev_del(my_led);//从内核移除设备
+
 	device_destroy(led_class,led_num);//删除设备节点
 	class_destroy(led_class);//删除设备类
 }
@@ -122,4 +151,3 @@ module_init(dev_init);
 module_exit(dev_exit);
 MODULE_LICENSE("Dual BSD/GPL");
 MODULE_AUTHOR("Svoday");
-
