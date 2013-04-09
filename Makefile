@@ -9,5 +9,5 @@ obj-m := led.o
 modules:
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
 clean:
-	rm -rf *.o *~ core .depend .*.cmd *.ko *.mod.c *.order *.symvers
-.PHONY:modules modules_install clean
+	$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
+#.PHONY:modules modules_install clean
