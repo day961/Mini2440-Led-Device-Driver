@@ -35,6 +35,8 @@ void led_init(void);
 //初始化led
 int led_status(int num);
 //获取当前led的状态.参数num为led灯的序号0~3.返回0：亮、1：灭
+void led_contrl(char cmd,char arg);
+//write方式改变led状态，cmd为控制命令 0亮1灭，arg为led序号0~3
 
 /***************打开实现函数*********************************/
 static int led_open(struct inode *inode,struct file *file)
@@ -48,23 +50,37 @@ static int led_open(struct inode *inode,struct file *file)
 static ssize_t led_write(struct file *filp, const char __user *userbuf,
 		size_t count, loff_t *off)
 {
-	if((ret = copy_from_user((void *)&data,userbuf,sizeof(int))) > 0){
+	char ch[2]={0,0};
+	if((ret = copy_from_user((void *)ch,userbuf,sizeof(userbuf))) > 0){
 		printk("%d byte fail to write\n",ret);
 	}else{
-	printk("Write Data %d\n",data);
+		ch[0] = ch[0]-48;//将ascii码转换成数字
+		ch[1] = ch[1]-48;
+		printk("Kernel Write Data:%d %d\n",ch[0],ch[1]);
+		led_contrl(ch[0],ch[1]);
 	}
 	return sizeof(int);
 }
 
-/***************读取实现函数*********************************/
+/***************读取实现函数********************************
+  num[]用于存放led状态
+  使用read()将读到一个4位数组
+ */
 static ssize_t led_read(struct file *filp, char __user *userbuf,
 		size_t count, loff_t *off)
 {
-	int num = led_status(0);
-	if((ret = copy_to_user((void *)userbuf,&num,sizeof(int))) > 0){
+	int num[4],n;
+	for(n=0;n<4;n++){
+		num[n]=led_status(n);
+	}
+
+	if((ret = copy_to_user((void *)userbuf,num,sizeof(num))) > 0){
 		printk("%d byte fail to read\n",ret);
 	}else{
-	printk("Read Data %d\n",num);
+	printk("Kernel Read Data :");
+	for(n=0;n<4;n++)
+		printk("%2d",num[n]);
+	printk("\n");
 	}
 	return sizeof(int);
 }

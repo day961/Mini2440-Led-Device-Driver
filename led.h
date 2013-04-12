@@ -71,6 +71,17 @@ int setled(unsigned int cmd,unsigned long arg)
 	}
 	return 0;
 }
+/*
+   改变led状态
+ */
+void led_contrl(char cmd,char arg)
+{
+	unsigned int value_dat;
+	value_dat = ioread16(rGPBDAT);
+	
+	value_dat =(value_dat&(~(1<<(arg+5))))|(cmd<<(arg+5));	
+	iowrite16(value_dat,rGPBDAT);	
+}
 
 /*
   led状态读取函数
@@ -81,7 +92,7 @@ int led_status(int num)
 {	
 	unsigned int value_dat;
 	value_dat = ioread16(rGPBDAT);
-	printk("value_dat=%d\n",value_dat);
+//	printk("value_dat=%d\n",value_dat);
 	if((value_dat&(1<<(num+5))) == 0)//+5 因为led0是从GPB5开始
 	{
 		return 0;//若判断为亮
