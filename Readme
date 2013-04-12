@@ -1,4 +1,7 @@
 mini2440上的led灯驱动
 
 目前能完成的功能：open close ioctl
-ioctl(cmd,arg) cmd:0亮,1灭。arg:第n(0~3)灯 
+ioctl(unsigned int cmd,unsigned int arg); cmd:0亮,1灭。arg:第n(0~3)灯 
+write(int fd,char ch[2],int size);char ch[0]:0亮，1灭。char ch[1]：led序号0~3.
+read(int fd,int num[4],int size);用int num[4]来存放led状态 例：0 1 1 1。0亮1灭.
+
